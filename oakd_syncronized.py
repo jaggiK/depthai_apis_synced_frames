@@ -30,6 +30,12 @@ def main():
     t_start = time()
     # get OAK-D instance - does init, creates pipeline + other initialization
     oakd = OAK_D(config)
+    if oakd.calibr_info is not None:
+        print("right intrinsics : ", oakd.calibr_info["intrinsics_r"])
+        print("right distortion : ", oakd.calibr_info["dist_r"])
+        print("left intrinsics : ", oakd.calibr_info["intrinsics_l"])
+        print("left distortion : ", oakd.calibr_info["dist_l"])
+
     while True:
         oakd.wait_for_all_frames(decode_nn)
         # process previewout

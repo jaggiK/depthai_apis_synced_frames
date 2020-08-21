@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 
@@ -29,6 +30,7 @@ class OAK_D(object):
         self.data_packets = None
         self.config = config
         self.right_bgr = None
+        self.calibr_info = None
         # latest single frameset
         self._frameset = {'previewout': None, 'right': None, 'depth_raw': None,
                           'packet_num': None, 'left': None, 'jpeg': None}
@@ -61,6 +63,8 @@ class OAK_D(object):
         self._pipeline = depthai.create_pipeline(config=config)
         if self.pipeline is None:
             raise RuntimeError('Pipeline creation failed!')
+
+        self.get_calibration("") # "" looks in current directory
 
     @property
     def frameset(self):
@@ -210,6 +214,15 @@ class OAK_D(object):
         cv2.putText(self.nn_frame, "NN fps: " + str(self.frame_count_prev['nn'][camera]),
                     (2, self.nn_frame.shape[0] - 4),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0))
+
+    def get_calibration(self, calibr_path=""):
+        try:
+            self.calibr_info = np.load(os.path.join(calibr_path, 'calibr_info.npz'))
+        except FileNotFoundError:
+            print("calibr_info not found, continuing without calibration information")
+            return
+        print("calibration information loaded")
+
 
     def clear_frameset(self):
         """
