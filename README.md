@@ -5,6 +5,10 @@ Setup
 1. copy all files `oakd*.py` to cloned `depthai` folder.
 2. replace `depthai_helpers/mobilenet_ssd_handler.py` of depthai with this one. (removed age-gender is made optional)
 
+`oakd.py` is the API interface class.
+
+'oakd_config.py` contains pipeline config info.
+
 'oakd_synchronized.py` is an example template file.
 
 Run:
