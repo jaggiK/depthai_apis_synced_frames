@@ -25,4 +25,4 @@ Run:
 ## Testing
 Tested for 10, 20, 25 and 30 fps. The buffer size does not exceed more than 2 packets, should work on low computing power devices as well.
 
-Note: `jpeg` stream is not supported yet.
+`jpegout` stream is added now. jpeg requests reduces fps from 30 to 7fps. So, currently jpeg is requested for every other frame.
