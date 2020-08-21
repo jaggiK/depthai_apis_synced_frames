@@ -9,12 +9,15 @@ In the case of missing packets - buffer might accumalate incomplete packets wait
 ## Setup
 1. copy all files `oakd*.py` to cloned `depthai` folder.
 2. replace `depthai_helpers/mobilenet_ssd_handler.py` of depthai with this one. (landmarks and emotion recognition is made optional)
+3. similarly replace `depthai_helpers/calibration_utils.py` for saving calibration information.
 
 `oakd.py` is the API interface class.
 
 'oakd_config.py` contains pipeline config info.
 
 'oakd_synchronized.py` is an example template file.
+
+`calibr_info.npz` is zipped numpy with intrinsics and distortion coefficients
 
 Run:
 `python3 oakd_syncronized.py` this should display synced resized previewout, left, right and depth_raw images.
