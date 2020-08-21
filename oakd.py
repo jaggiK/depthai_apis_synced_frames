@@ -13,6 +13,7 @@ MAX_WAIT_TIME = 10
 
 class OAK_D(object):
     BUFFER_SIZE = 30  # max buffer size for saving unsynced packets, usually size 2 is sufficient
+    JPEG_REQ_RATE = 2  # request jpeg every other frame
     # buffer to store packets
     buffer = {}
 
@@ -31,9 +32,10 @@ class OAK_D(object):
         self.config = config
         self.right_bgr = None
         self.calibr_info = None
+        self.jpeg_req_ctr = 0
         # latest single frameset
         self._frameset = {'previewout': None, 'right': None, 'depth_raw': None,
-                          'packet_num': None, 'left': None, 'jpeg': None}
+                          'packet_num': None, 'left': None, 'jpegout': None}
         self.frameset_count = 0
 
         for cam in self.nn_cams:
@@ -64,7 +66,7 @@ class OAK_D(object):
         if self.pipeline is None:
             raise RuntimeError('Pipeline creation failed!')
 
-        self.get_calibration("") # "" looks in current directory
+        self.get_calibration("")  # "" looks in current directory
 
     @property
     def frameset(self):
@@ -94,17 +96,23 @@ class OAK_D(object):
     def fill_frameset(self):
         """
         fill frame information as we get them
+        Note : jpegout does not have packet num, so picking the closest paccket
+        TODO (OAK-D) : add packet num for jpegout
         """
         for packet in self.data_packets:
             if packet.stream_name not in self.stream_names:
                 continue  # skip streams that were automatically added
-            packet_num = packet.getMetadata().getSequenceNum()
             packet_data = packet.getData()
+            if packet.stream_name == 'jpegout':  # does not work
+                self.frameset['jpegout'] = cv2.imdecode(packet_data, cv2.IMREAD_COLOR)
+                continue
+
+            packet_num = packet.getMetadata().getSequenceNum()
             if packet_data is None:
                 print('Invalid packet data!')
                 continue
 
-            if packet_num not in self.buffer and packet.stream_name != 'previewout':
+            if packet.stream_name != 'previewout' and packet_num not in self.buffer:
                 self.buffer[packet_num] = {}
                 self.buffer[packet_num]['right'] = None
                 self.buffer[packet_num]['left'] = None
@@ -122,9 +130,7 @@ class OAK_D(object):
                 if len(frame.shape) == 2:
                     if frame.dtype == np.uint16:  # uint16
                         self.buffer[packet_num]['depth_raw'] = frame
-            if packet.stream_name == 'jpeg':  # does not work
-                mat = cv2.imdecode(packet_data, cv2.IMREAD_COLOR)
-                self.frameset['jpeg'] = mat
+
             if packet_num in self.buffer and self.is_pack_complete(self.buffer[packet_num]):
                 self.frameset['depth_raw'] = self.buffer[packet_num]['depth_raw']
                 self.frameset['right'] = self.buffer[packet_num]['right']
@@ -140,20 +146,22 @@ class OAK_D(object):
     def wait_for_all_frames(self, decode_nn):
         """
         wait until all the frames are collected
+        Note: requesting jpeg cuts fps rate largely
         """
+        if 'jpegout' in self.config['streams']:
+            if self.jpeg_req_ctr % self.JPEG_REQ_RATE == 0:
+                depthai.request_jpeg()
+                self.jpeg_req_ctr = 0
+            self.jpeg_req_ctr += 1
         start_time = time.time()
-        try:
-            while not self.is_frame_complete():
-                self.get_packets()
-                self.decode_and_update(decode_nn)
-                self.right_bgr = None
-                self.fill_frameset()
-                curr_time = time.time()
-                if curr_time - start_time > MAX_WAIT_TIME:
-                    raise Exception('[Error] Time out waiting for frames')
-        except Exception as error:
-            print(error)
-            sys.exit(-1)
+        while not self.is_frame_complete():
+            self.get_packets()
+            self.decode_and_update(decode_nn)
+            self.right_bgr = None
+            self.fill_frameset()
+            curr_time = time.time()
+            if curr_time - start_time > MAX_WAIT_TIME:
+                raise Exception('[Error] Time out waiting for frames')
         self.frameset_count += 1
 
     def is_frame_complete(self):
@@ -163,10 +171,13 @@ class OAK_D(object):
         """
         total_streams = 0
         for stream in self.config['streams']:
-            if stream != 'metaout':
+            if stream != 'metaout' and stream != 'jpegout':
                 if self.frameset[stream] is not None:
                     total_streams += 1
-        return total_streams == len(self.config["streams"]) - 1  # ignore metaout
+        if 'jpegout' in self.config['streams']:
+            return total_streams == len(self.config["streams"]) - 2  # ignore metaout and jpegout
+        else:
+            return total_streams == len(self.config["streams"]) - 1  # ignore metaout
 
     def is_pack_complete(self, packet):
         """
@@ -178,7 +189,10 @@ class OAK_D(object):
             if stream != 'metaout' and stream != 'previewout':
                 if stream in packet and packet[stream] is not None:
                     total_streams += 1
-        return total_streams == len(self.config['streams']) - 2  # ignore metaout and previewout
+        if 'jpegout' in self.config['streams']:
+            return total_streams == len(self.config['streams']) - 3  # ignore metaout and previewout and jpegout
+        else:
+            return total_streams == len(self.config['streams']) - 2  # ignore metaout and previewout
 
     def get_packets(self):
         """
@@ -223,13 +237,12 @@ class OAK_D(object):
             return
         print("calibration information loaded")
 
-
     def clear_frameset(self):
         """
         reset all the frames
         """
         self._frameset = {'previewout': None, 'right': None, 'depth_raw': None,
-                          'packet_num': None, 'left': None, 'jpeg': None}
+                          'packet_num': None, 'left': None, 'jpegout': None}
 
     def exit(self):
         """

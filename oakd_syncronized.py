@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import open3d as o3d
 
-from oakd_config import config, blob_file_config, decode_nn, show_nn, labels
+from oakd_config import config, decode_nn, show_nn, labels
 from oakd import OAK_D
 
 
@@ -48,10 +48,16 @@ def main():
         cv2.imshow(window_name, oakd.nn_frame)
 
         # process right
-        cv2.imshow("right", cv2.resize(oakd.frameset['right'], (640, 360)))
+        if oakd.frameset['right'] is not None:
+            cv2.imshow("right", cv2.resize(oakd.frameset['right'], (640, 360)))
 
         # process left
-        cv2.imshow("left", cv2.resize(oakd.frameset['left'], (640, 360)))
+        if oakd.frameset['left'] is not None:
+            cv2.imshow("left", cv2.resize(oakd.frameset['left'], (640, 360)))
+
+        # process left
+        if oakd.frameset['jpegout'] is not None:
+            cv2.imshow("jpegout", cv2.resize(oakd.frameset['jpegout'], (640, 360)))
 
         # process depth
         frame = oakd.frameset['depth_raw']

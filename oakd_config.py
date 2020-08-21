@@ -28,7 +28,7 @@ if is_mobile_net:
 
 
 config={
-    'streams': ['previewout', 'metaout', 'depth_raw', 'right', 'left'],
+    'streams': ['previewout', 'metaout', 'depth_raw', 'right', 'left', 'jpegout'],
     'ai': {
         "blob_file": blob_file,
         "blob_file_config": blob_file_config,
@@ -56,13 +56,13 @@ config={
                     # 3840x2160, 1920x1080
                     # only UHD/1080p/30 fps supported for now
                     'resolution_h': 1080,#args['rgb_resolution'],
-                    'fps': 20,
+                    'fps': 30,
                 },
             'mono':
                 {
                     # 1280x720, 1280x800, 640x400 (binning enabled)
                     'resolution_h': 720,#args['mono_resolution'],
-                    'fps': 20,
+                    'fps': 30,
                 },
         },
 
