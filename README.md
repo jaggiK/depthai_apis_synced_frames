@@ -9,6 +9,7 @@ In the case of missing packets - buffer might accumalate incomplete packets wait
 ## Setup
 1. copy all files `oakd*.py` to cloned `depthai` folder.
 2. replace `depthai_helpers/mobilenet_ssd_handler.py` of depthai with this one. (landmarks and emotion recognition is made optional)
+3. similarly replace `depthai_helpers/calibration_utils.py` for saving calibration information.
 
 `oakd.py` is the API interface class.
 
@@ -16,8 +17,12 @@ In the case of missing packets - buffer might accumalate incomplete packets wait
 
 'oakd_synchronized.py` is an example template file.
 
+`calibr_info.npz` is zipped numpy with intrinsics and distortion coefficients
+
 Run:
 `python3 oakd_syncronized.py` this should display synced resized previewout, left, right and depth_raw images.
 
 ## Testing
 Tested for 10, 20, 25 and 30 fps. The buffer size does not exceed more than 2 packets, should work on low computing power devices as well.
+
+Note: `jpeg` stream is not supported yet.
