@@ -24,3 +24,5 @@ Run:
 
 ## Testing
 Tested for 10, 20, 25 and 30 fps. The buffer size does not exceed more than 2 packets, should work on low computing power devices as well.
+
+Note: `jpeg` stream is not supported yet.
